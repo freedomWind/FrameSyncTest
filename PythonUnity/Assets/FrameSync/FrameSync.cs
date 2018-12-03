@@ -24,19 +24,23 @@ namespace FrameSync
     public interface IFrame
     { }
 
-    /// <summary>
-    /// 帧管理
-    /// </summary>
-    public class FrameManager
-    {
-        public List<IFrame> frameList;  //
-    }
+
 
     /// <summary>
     /// 玩家操作行为
     /// </summary>
     public interface IAction
-    { }
+    {
+        int turnID { get; }
+        int commandID { get; }
+        int uid { get; }
+        object data { get; }   
+    }
+
+    public interface ICommand
+    {
+        void DoCommand(object data);
+    }
 
     /// <summary>
     /// 逻辑单元
@@ -47,11 +51,16 @@ namespace FrameSync
         IAction playerAction { get; }
     }
 
-    public class Game
+    public sealed class FGame
     {
-        public static Game Ins;
+        bool _isReady = false;
+        static FGame _ins = new FGame();
+        private FGame() { }
+        public static FGame Instance { get { return _ins; } }
         public static int nowRealFrameIndex = -1;  //当前最新的逻辑帧
         public static int nowDoFrameIndex;         //当前渲染的帧
+        public bool isReady { get { return _isReady; } }
+        
         Client Aclient;
         Client Bclient;
 
@@ -62,6 +71,7 @@ namespace FrameSync
             aTimer.Elapsed += new System.Timers.ElapsedEventHandler(aTimer_Elapsed);
             aTimer.Interval = 250;
             aTimer.Enabled = true;
+            _isReady = true;
         }
         
         void aTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -75,6 +85,8 @@ namespace FrameSync
             Debug.LogError("逻辑帧，客户端定时驱动帧："+nowRealFrameIndex);
             Aclient.FrameTick(nowRealFrameIndex);
             Bclient.FrameTick(nowRealFrameIndex);
+
+
         }
         /// <summary>
         /// 关键帧驱动
@@ -91,8 +103,6 @@ namespace FrameSync
 
     public class Client
     {
-        Queue<ILogicUnit> actionQue;
-
         /// <summary>
         /// 收到关键帧
         /// </summary>
@@ -101,34 +111,18 @@ namespace FrameSync
 
         public void FrameTick(int frameIndex)
         {
-            CollectLogicUnits();           //收集上一帧所有逻辑
             if (frameIndex % 5 == 0)       //关键帧上传
             {
                 UpLoad();
             }
         }
 
-        public void EnQue(ILogicUnit logic)
-        {
-            actionQue.Enqueue(logic);
-        }
-        /// <summary>
-        /// 收集每个逻辑帧的逻辑单元
-        /// </summary>
-        void CollectLogicUnits()
-        {
-
-        }
-        IKeyFrameData GetKeyFrameData()
-        {
-            return null;
-        }
         /// <summary>
         /// 上传关键帧数据
         /// </summary>
         public void UpLoad()
         {
-            GameServer.Ins.AddClientKeyFramedata(GetKeyFrameData());
+            CommandSystem.GetInstance().UpLoadCommand();
         }
     }
     public struct ClientKeyFrameData
@@ -141,8 +135,8 @@ namespace FrameSync
     /// </summary>
     public class GameServer
     {
-        Game gameA;
-        Game gameB;
+        FGame gameA;
+        FGame gameB;
         public static GameServer Ins;
         Queue<ClientKeyFrameData> totalData;
         ClientKeyFrameData curKeyFrameData;   //当前等待的数据

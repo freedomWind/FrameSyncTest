@@ -11,5 +11,19 @@ namespace Common
             t2 = t1;
             t1 = t;
         }
+
+        public static T AddComponentIfNoExist<T>(this Transform trans) where T : Component
+        {
+            return trans.gameObject.AddComponentIfNoExsit<T>();
+        }
+        public static T AddComponentIfNoExsit<T>(this GameObject oo) where T : Component
+        {
+            T t = oo.GetComponent<T>();
+            if (t == null)
+                t = oo.AddComponent<T>();
+            return t;
+        }
+
     }
+
 }

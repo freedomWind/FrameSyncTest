@@ -16,7 +16,7 @@ public class FrameUpdateManager : MonoBehaviour
             {
                 if (_ins == null)
                 {
-                  //  _ins = AppFacade.Instance.GetComponent<FrameUpdateManager>();
+                    _ins = AppFacade.Instance.GetComponent<FrameUpdateManager>();
                 }
                 return _ins;
             }
